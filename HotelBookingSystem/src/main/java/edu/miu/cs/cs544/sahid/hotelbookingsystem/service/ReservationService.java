@@ -2,6 +2,7 @@ package edu.miu.cs.cs544.sahid.hotelbookingsystem.service;
 
 import edu.miu.cs.cs544.sahid.hotelbookingsystem.HelperModel.GuestDTO;
 import edu.miu.cs.cs544.sahid.hotelbookingsystem.HelperModel.ReservationDTO;
+import edu.miu.cs.cs544.sahid.hotelbookingsystem.HelperModel.RoomDTO;
 import edu.miu.cs.cs544.sahid.hotelbookingsystem.entity.*;
 import edu.miu.cs.cs544.sahid.hotelbookingsystem.repository.*;
 import jakarta.jms.JMSProducer;
@@ -19,6 +20,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -54,6 +56,95 @@ public class ReservationService {
         this.jmsProducer = jmsProducer;
     }
 
+//    @Transactional
+//    public String createReservationsWithPayment(List<Long> roomIds, Reservation reservationDetails, Payment paymentDetails, List<Guest> guestDetails) {
+//        try {
+//            logger.info("Reservation process started...");
+//            String username = SecurityContextHolder.getContext().getAuthentication().getName();
+//            User user = userRepository.findByUsername(username)
+//                    .orElseThrow(() -> new RuntimeException("User not found with username: " + username));
+//
+//            List<Room> rooms = roomRepository.findAllById(roomIds);
+//            if (rooms.isEmpty() || rooms.size() != roomIds.size()) {
+//                return "Some rooms are not available.";
+//            }
+//
+//            for (Long roomId : roomIds) {
+//                Room room = roomRepository.findRoomForUpdate(roomId);
+//                if (!room.isAvailable()) {
+//                    throw new RuntimeException("Room is already booked.");
+//                }
+//            }
+//
+//            List<Reservation> reservations = new ArrayList<>();
+//            double totalPrice = 0.0;
+//
+//            for (Room room : rooms) {
+//                Reservation reservation = new Reservation();
+//                reservation.setUser(user);
+//                reservation.setRoom(room);
+//                reservation.setCheckInDate(reservationDetails.getCheckInDate());
+//                reservation.setCheckOutDate(reservationDetails.getCheckOutDate());
+//                reservation.setNumberOfGuests(reservationDetails.getNumberOfGuests());
+//                reservation.setTotalPrice(room.getPricePerNight());
+//                reservation.setStatus("Confirmed");
+//                reservation.setBookingDate(LocalDate.now());
+//
+//                room.setAvailable(false);
+//                roomRepository.save(room);
+//                Reservation savedReservation = reservationRepository.save(reservation);
+//
+//                // Associate guests with the saved reservation
+//                for (Guest guest : guestDetails) {
+//                    guest.setReservation(savedReservation);
+//                }
+//                guestRepository.saveAll(guestDetails);
+//
+//                reservations.add(savedReservation);
+//                totalPrice += room.getPricePerNight();
+//            }
+//
+//            // Create and save payment
+//            Payment payment = paymentService.processPayment(paymentDetails, totalPrice);
+//
+//            // Associate payment with reservations
+//            for (Reservation reservation : reservations) {
+//                reservation.setPayment(payment);
+//                reservationRepository.save(reservation);
+//            }
+//
+//            //JMS message send
+//            try {
+//                StringBuilder messageBuilder = new StringBuilder();
+//                messageBuilder.append("Reservation confirmed for user: ").append(user.getUsername())
+//                        .append("\nTotal Price: ").append(totalPrice)
+//                        .append("\nCheck-In Date: ").append(reservationDetails.getCheckInDate())
+//                        .append(", Check-Out Date: ").append(reservationDetails.getCheckOutDate())
+//                        .append("\nRooms and Hotels:\n");
+//
+//                for (Room room : rooms) {
+//                    messageBuilder.append("Room Number: ").append(room.getRoomNumber())
+//                            .append(", Room Type: ").append(room.getRoomType())
+//                            .append(", Hotel: ").append(room.getHotel().getName())
+//                            .append("\n");
+//                }
+//
+//                String message = messageBuilder.toString();
+//
+//                // Send JMS message
+//                jmsProducer.sendReservationConfirmation("reservationQueue", message);
+//                System.out.println("JMS message sent successfully.");
+//            }
+//            catch (Exception e) {
+//                System.out.println("JMS message sending failed due to: "+e.getMessage());
+//            }
+//            return "Reservation created successfully.";
+//        } catch (Exception e) {
+//            logger.error("Error during reservation creation: {}", e.getMessage(), e);
+//            return "Reservation creation failed.";
+//        }
+//    }
+
     @Transactional
     public String createReservationsWithPayment(List<Long> roomIds, Reservation reservationDetails, Payment paymentDetails, List<Guest> guestDetails) {
         try {
@@ -67,57 +158,46 @@ public class ReservationService {
                 return "Some rooms are not available.";
             }
 
-            for (Long roomId : roomIds) {
-                Room room = roomRepository.findRoomForUpdate(roomId);
-                if (!room.isAvailable()) {
-                    throw new RuntimeException("Room is already booked.");
-                }
-            }
-
-            List<Reservation> reservations = new ArrayList<>();
-            double totalPrice = 0.0;
-
             for (Room room : rooms) {
-                Reservation reservation = new Reservation();
-                reservation.setUser(user);
-                reservation.setRoom(room);
-                reservation.setCheckInDate(reservationDetails.getCheckInDate());
-                reservation.setCheckOutDate(reservationDetails.getCheckOutDate());
-                reservation.setNumberOfGuests(reservationDetails.getNumberOfGuests());
-                reservation.setTotalPrice(room.getPricePerNight());
-                reservation.setStatus("Confirmed");
-                reservation.setBookingDate(LocalDate.now());
-
-                room.setAvailable(false);
-                roomRepository.save(room);
-                Reservation savedReservation = reservationRepository.save(reservation);
-
-                // Associate guests with the saved reservation
-                for (Guest guest : guestDetails) {
-                    guest.setReservation(savedReservation);
+                Room roomForUpdate = roomRepository.findRoomForUpdate(room.getId());
+                if (!roomForUpdate.getAvailable()) {
+                    throw new RuntimeException("Room " + room.getRoomNumber() + " is already booked.");
                 }
-                guestRepository.saveAll(guestDetails);
-
-                reservations.add(savedReservation);
-                totalPrice += room.getPricePerNight();
+                roomForUpdate.setAvailable(false);
+                roomRepository.save(roomForUpdate);
             }
+            String bookingNumber = generateBookingNumber();
+            // Create a single reservation
+            Reservation reservation = new Reservation();
+            reservation.setUser(user);
+            reservation.setRoom(rooms);
+            reservation.setCheckInDate(reservationDetails.getCheckInDate());
+            reservation.setCheckOutDate(reservationDetails.getCheckOutDate());
+            reservation.setNumberOfGuests(reservationDetails.getNumberOfGuests());
+            reservation.setTotalPrice(rooms.stream().mapToDouble(Room::getPricePerNight).sum());
+            reservation.setStatus("Confirmed");
+            reservation.setBookingDate(LocalDate.now());
+            reservation.setBookingNumber(bookingNumber);
+            Reservation savedReservation = reservationRepository.save(reservation);
 
-            // Create and save payment
+            // Associate guests with the single reservation
+            guestDetails.forEach(guest -> guest.setReservation(savedReservation));
+            guestRepository.saveAll(guestDetails);
+
+            // Process payment
+            double totalPrice = reservation.getTotalPrice();
             Payment payment = paymentService.processPayment(paymentDetails, totalPrice);
+            reservation.setPayment(payment);
+            reservationRepository.save(reservation);
 
-            // Associate payment with reservations
-            for (Reservation reservation : reservations) {
-                reservation.setPayment(payment);
-                reservationRepository.save(reservation);
-            }
-
-            //JMS message send
+            // Send JMS message
             try {
                 StringBuilder messageBuilder = new StringBuilder();
                 messageBuilder.append("Reservation confirmed for user: ").append(user.getUsername())
                         .append("\nTotal Price: ").append(totalPrice)
                         .append("\nCheck-In Date: ").append(reservationDetails.getCheckInDate())
                         .append(", Check-Out Date: ").append(reservationDetails.getCheckOutDate())
+                        .append(", Reservation Number: ").append(bookingNumber)
                         .append("\nRooms and Hotels:\n");
 
                 for (Room room : rooms) {
@@ -128,50 +208,112 @@ public class ReservationService {
                 }
 
                 String message = messageBuilder.toString();
-
-                // Send JMS message
                 jmsProducer.sendReservationConfirmation("reservationQueue", message);
-                System.out.println("JMS message sent successfully.");
+            } catch (Exception e) {
+                logger.error("JMS message sending failed: {}", e.getMessage(), e);
             }
-            catch (Exception e) {
-                System.out.println("JMS message sending failed due to: "+e.getMessage());
-            }
+
             return "Reservation created successfully.";
         } catch (Exception e) {
             logger.error("Error during reservation creation: {}", e.getMessage(), e);
             return "Reservation creation failed.";
         }
     }
+    private String generateBookingNumber() {
+        String timestamp = Long.toString(System.currentTimeMillis(), 36).toUpperCase();
 
+        // Random alphanumeric string (7 characters from UUID)
+        String randomString = UUID.randomUUID().toString().replaceAll("-", "").substring(0, 7).toUpperCase();
+
+        // Combine timestamp and random string, and ensure it doesn't exceed 15 characters
+        return (timestamp + randomString).substring(0, 15);
+    }
+    //    public List<ReservationDTO> getAllReservationsWithFilters(LocalDate fromDate, LocalDate toDate, Long userId) {
+//        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+//        CriteriaQuery<Reservation> query = cb.createQuery(Reservation.class);
+//        Root<Reservation> reservationRoot = query.from(Reservation.class);
+//
+//        // Join with Room and Hotel for details
+//        Join<Reservation, Room> roomJoin = reservationRoot.join("room", JoinType.INNER);
+//        Join<Room, Hotel> hotelJoin = roomJoin.join("hotel", JoinType.INNER);
+//
+//        // Build predicates
+//        List<Predicate> predicates = new ArrayList<>();
+//
+//        if (fromDate != null) {
+//            predicates.add(cb.greaterThanOrEqualTo(reservationRoot.get("checkInDate"), fromDate));
+//        }
+//        if (toDate != null) {
+//            predicates.add(cb.lessThanOrEqualTo(reservationRoot.get("checkOutDate"), toDate));
+//        }
+//        if (userId != null) {
+//            predicates.add(cb.equal(reservationRoot.get("user").get("id"), userId));
+//        }
+//
+//        query.select(reservationRoot).where(predicates.toArray(new Predicate[0]));
+//
+//        // Execute query
+//        List<Reservation> reservations = entityManager.createQuery(query).getResultList();
+//
+//        // Convert to DTO
+//        return reservations.stream().map(reservation -> {
+//            List<GuestDTO> guests = reservation.getGuests().stream()
+//                    .map(guest -> new GuestDTO(
+//                            guest.getFullName(),
+//                            guest.getEmail(),
+//                            guest.getPhone(),
+//                            guest.getAddress(),
+//                            guest.getDateOfBirth()))
+//                    .collect(Collectors.toList());
+//
+//            Room room = reservation.getRoom();
+//            return new ReservationDTO(
+//                    reservation.getId(),
+//                    reservation.getCheckInDate(),
+//                    reservation.getCheckOutDate(),
+//                    reservation.getNumberOfGuests(),
+//                    reservation.getTotalPrice(),
+//                    reservation.getStatus(),
+//                    reservation.getBookingDate(),
+//                    room.getHotel().getName(),
+//                    room.getHotel().getCity(),
+//                    room.getRoomType(),
+//                    room.getRoomNumber(),
+//                    room.getPricePerNight(),
+//                    guests
+//            );
+//        }).collect(Collectors.toList());
+//    }
     public List<ReservationDTO> getAllReservationsWithFilters(LocalDate fromDate, LocalDate toDate, Long userId) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Reservation> query = cb.createQuery(Reservation.class);
         Root<Reservation> reservationRoot = query.from(Reservation.class);
 
         // Join with Room and Hotel for details
-        Join<Reservation, Room> roomJoin = reservationRoot.join("room", JoinType.INNER);
+        Join<Reservation, Room> roomJoin = reservationRoot.join("rooms", JoinType.INNER); // Adjusted for multiple rooms per reservation
         Join<Room, Hotel> hotelJoin = roomJoin.join("hotel", JoinType.INNER);
 
         // Build predicates
         List<Predicate> predicates = new ArrayList<>();
 
         if (fromDate != null) {
-            predicates.add(cb.greaterThanOrEqualTo(reservationRoot.get("checkInDate"), fromDate));
+            predicates.add(cb.greaterThanOrEqualTo(reservationRoot.get("bookingDate"), fromDate));
         }
         if (toDate != null) {
-            predicates.add(cb.lessThanOrEqualTo(reservationRoot.get("checkOutDate"), toDate));
+            predicates.add(cb.lessThanOrEqualTo(reservationRoot.get("bookingDate"), toDate));
         }
         if (userId != null) {
             predicates.add(cb.equal(reservationRoot.get("user").get("id"), userId));
         }
 
-        query.select(reservationRoot).where(predicates.toArray(new Predicate[0]));
+        query.select(reservationRoot).where(cb.and(predicates.toArray(new Predicate[0])));
 
         // Execute query
         List<Reservation> reservations = entityManager.createQuery(query).getResultList();
 
         // Convert to DTO
         return reservations.stream().map(reservation -> {
+            // Gather guest details
             List<GuestDTO> guests = reservation.getGuests().stream()
                     .map(guest -> new GuestDTO(
                             guest.getFullName(),
@@ -181,7 +323,16 @@ public class ReservationService {
                             guest.getDateOfBirth()))
                     .collect(Collectors.toList());
 
-            Room room = reservation.getRoom();
+            // Map multiple rooms to include in the DTO
+            List<RoomDTO> roomDetails = reservation.getRoom().stream()
+                    .map(room -> new RoomDTO(
+                            room.getRoomNumber(),
+                            room.getRoomType(),
+                            room.getPricePerNight(),
+                            room.getHotel().getName(),
+                            room.getHotel().getCity(), room.getAvailable()))
+                    .collect(Collectors.toList());
+
             return new ReservationDTO(
                     reservation.getId(),
                     reservation.getCheckInDate(),
@@ -190,16 +341,13 @@ public class ReservationService {
                     reservation.getTotalPrice(),
                     reservation.getStatus(),
                     reservation.getBookingDate(),
-                    room.getHotel().getName(),
-                    room.getHotel().getCity(),
-                    room.getRoomType(),
-                    room.getRoomNumber(),
-                    room.getPricePerNight(),
-                    guests
+                    reservation.getBookingNumber(),
+                    roomDetails, // Added room details
+                    guests // Added guest details
+
             );
         }).collect(Collectors.toList());
     }
-
 //    public List<ReservationDTO> getAllReservations() {
 //        List<ReservationDTO> reservations = reservationRepository.findAllReservationsWithDetails();
 //

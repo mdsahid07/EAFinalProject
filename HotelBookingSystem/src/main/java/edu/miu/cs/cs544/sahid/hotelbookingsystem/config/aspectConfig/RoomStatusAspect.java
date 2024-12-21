@@ -17,7 +17,7 @@ public class RoomStatusAspect {
     @After("execution(* edu.miu.cs.cs544.sahid.hotelbookingsystem.service.RoomService.updateRoom(..))")
     public void logRoomStatusChange(JoinPoint joinPoint) {
         Room room = (Room) joinPoint.getArgs()[1];
-        logger.info("Room status updated. Room Number: {}, Availability: {}", room.getRoomNumber(), room.isAvailable());
+        logger.info("Room status updated. Room Number: {}, Availability: {}", room.getRoomNumber(), room.getAvailable());
     }
 }
 

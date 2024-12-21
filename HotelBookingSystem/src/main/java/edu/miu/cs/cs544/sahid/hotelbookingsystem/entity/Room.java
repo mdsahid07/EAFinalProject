@@ -75,7 +75,7 @@ public class Room {
         this.pricePerNight = pricePerNight;
     }
 
-    public boolean isAvailable() {
+    public boolean getAvailable() {
         return isAvailable;
     }
 

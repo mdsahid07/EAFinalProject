@@ -28,9 +28,13 @@ public class Reservation {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne
-    @JoinColumn(name = "room_id", nullable = false)
-    private Room room;
+    @ManyToMany
+    @JoinTable(
+            name = "reservation_rooms",
+            joinColumns = @JoinColumn(name = "reservation_id"),
+            inverseJoinColumns = @JoinColumn(name = "room_id")
+    )
+    private List<Room> rooms;
 
     @ManyToOne
     @JoinColumn(name = "payment_id")
@@ -38,9 +42,11 @@ public class Reservation {
 
     @OneToMany(mappedBy = "reservation", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Guest> guests;
+    @Column(unique = true, nullable = false, updatable = false)
+    private String bookingNumber;
 
     public Reservation() {}
-    public Reservation(LocalDate checkInDate, LocalDate checkOutDate, int numberOfGuests, String status, LocalDate bookingDate, double totalPrice, User user, Room room, Payment payment, List<Guest> guest) {
+    public Reservation(LocalDate checkInDate, LocalDate checkOutDate, int numberOfGuests, String status, LocalDate bookingDate, double totalPrice, User user, List<Room> room, Payment payment, List<Guest> guest, String bookingNumber) {
         this.checkInDate = checkInDate;
         this.checkOutDate = checkOutDate;
         this.numberOfGuests = numberOfGuests;
@@ -48,9 +54,10 @@ public class Reservation {
         this.bookingDate = bookingDate;
         this.totalPrice = totalPrice;
         this.user = user;
-        this.room = room;
+        this.rooms = room;
         this.payment = payment;
         this.guests = guest;
+        this.bookingNumber = bookingNumber;
     }
 
     public Long getId() {
@@ -113,12 +120,12 @@ public class Reservation {
         this.user = user;
     }
 
-    public Room getRoom() {
-        return room;
+    public List<Room> getRoom() {
+        return rooms;
     }
 
-    public void setRoom(Room room) {
-        this.room = room;
+    public void setRoom(List<Room> room) {
+        this.rooms = room;
     }
     public Payment getPayment() {
         return payment;
@@ -132,7 +139,12 @@ public class Reservation {
     public void setGuests(List<Guest> guests) {
         this.guests = guests;
     }
-
+    public String getBookingNumber() {
+        return bookingNumber;
+    }
+    public void setBookingNumber(String bookingNumber) {
+        this.bookingNumber = bookingNumber;
+    }
 
     @Override
     public String toString() {
@@ -145,9 +157,10 @@ public class Reservation {
                 ", bookingDate=" + bookingDate +
                 ", totalPrice=" + totalPrice +
                 ", user=" + user +
-                ", room=" + room +
+                ", room=" + rooms +
                 ", payment=" + payment +
                 ", guests=" + guests +
+                ", bookingNumber='" + bookingNumber + '\'' +
                 '}';
     }
 }

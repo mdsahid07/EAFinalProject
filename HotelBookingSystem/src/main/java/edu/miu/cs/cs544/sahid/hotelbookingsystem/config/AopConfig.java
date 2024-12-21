@@ -12,23 +12,23 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 @EnableAspectJAutoProxy
 public class AopConfig {
 
-    @Bean
-    public LoggingAspect loggingAspect() {
-        return new LoggingAspect();
-    }
+//    @Bean
+//    public LoggingAspect loggingAspect() {
+//        return new LoggingAspect();
+//    }
 
-    @Bean
-    public PerformanceAspect performanceAspect() {
-        return new PerformanceAspect();
-    }
-
-    @Bean
-    public RoomStatusAspect roomStatusAspect() {
-        return new RoomStatusAspect();
-    }
-
-    @Bean
-    public SecurityAspect securityAspect() {
-        return new SecurityAspect();
-    }
+//    @Bean
+//    public PerformanceAspect performanceAspect() {
+//        return new PerformanceAspect();
+//    }
+//
+//    @Bean
+//    public RoomStatusAspect roomStatusAspect() {
+//        return new RoomStatusAspect();
+//    }
+//
+//    @Bean
+//    public SecurityAspect securityAspect() {
+//        return new SecurityAspect();
+//    }
 }

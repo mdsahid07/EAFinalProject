@@ -25,7 +25,7 @@ public class RoomService {
         Hotel hotel = hotelRepository.findById(hotelId)
                 .orElseThrow(() -> new RuntimeException("Hotel not found with ID: " + hotelId));
         room.setHotel(hotel);
-        Room savedRoom =roomRepository.save(room);
+        Room savedRoom = roomRepository.save(room);
         return savedRoom;
 
     }
@@ -35,15 +35,14 @@ public class RoomService {
 //        return roomRepository.findAll();
 //    }
     public List<RoomDTO> getAllRooms() {
-        return roomRepository.findAll().stream().filter(a->a.isAvailable()).map(room -> {
+        return roomRepository.findAll().stream().filter(a -> a.getAvailable()).map(room -> {
             RoomDTO roomDTO = new RoomDTO();
-            roomDTO.setId(room.getId());
             roomDTO.setRoomType(room.getRoomType());
-            roomDTO.setBedType(room.getBedType());
             roomDTO.setRoomNumber(room.getRoomNumber());
             roomDTO.setPricePerNight(room.getPricePerNight());
-            roomDTO.setIsAvailable(room.isAvailable());
+            roomDTO.setAvailable(room.getAvailable());
             roomDTO.setHotelName(room.getHotel().getName()); // Fetch hotel name
+            roomDTO.setHotelCity(room.getHotel().getCity());
             return roomDTO;
         }).collect(Collectors.toList());
     }
@@ -77,8 +76,8 @@ public class RoomService {
         if (roomDetails.getPricePerNight() != 0) {
             room.setPricePerNight(roomDetails.getPricePerNight());
         }
-        if (roomDetails.isAvailable() != room.isAvailable()) {
-            room.setAvailable(roomDetails.isAvailable());
+        if (roomDetails.getAvailable() != room.getAvailable()) {
+            room.setAvailable(roomDetails.getAvailable());
         }
 
         return roomRepository.save(room); // Save the updated entity

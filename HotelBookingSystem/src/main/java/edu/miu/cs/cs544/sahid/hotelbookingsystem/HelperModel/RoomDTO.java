@@ -1,34 +1,22 @@
 package edu.miu.cs.cs544.sahid.hotelbookingsystem.HelperModel;
 
 public class RoomDTO {
-    private Long id;
-    private String roomType;
-    private String bedType;
     private String roomNumber;
+    private String roomType;
     private double pricePerNight;
+    private String hotelName;
+    private String hotelCity;
     private boolean isAvailable;
-    private String hotelName; // Include hotel name
 
-    public Long getId() {
-        return id;
-    }
-    public void setId(Long id) {
-        this.id = id;
-    }
-    public String getRoomType() {
-        return roomType;
-    }
-
-    public void setRoomType(String roomType) {
+    public RoomDTO() {}
+    // Constructor, Getters, and Setters
+    public RoomDTO(String roomNumber, String roomType, double pricePerNight, String hotelName, String hotelCity, boolean isAvailable) {
+        this.roomNumber = roomNumber;
         this.roomType = roomType;
-    }
-
-    public String getBedType() {
-        return bedType;
-    }
-
-    public void setBedType(String bedType) {
-        this.bedType = bedType;
+        this.pricePerNight = pricePerNight;
+        this.hotelName = hotelName;
+        this.hotelCity = hotelCity;
+        this.isAvailable = isAvailable;
     }
 
     public String getRoomNumber() {
@@ -39,6 +27,14 @@ public class RoomDTO {
         this.roomNumber = roomNumber;
     }
 
+    public String getRoomType() {
+        return roomType;
+    }
+
+    public void setRoomType(String roomType) {
+        this.roomType = roomType;
+    }
+
     public double getPricePerNight() {
         return pricePerNight;
     }
@@ -47,19 +43,27 @@ public class RoomDTO {
         this.pricePerNight = pricePerNight;
     }
 
-    public boolean getIsAvailable() {
-        return isAvailable;
-    }
-
-    public void setIsAvailable(boolean available) {
-        isAvailable = available;
-    }
-
     public String getHotelName() {
         return hotelName;
     }
 
     public void setHotelName(String hotelName) {
         this.hotelName = hotelName;
+    }
+
+    public String getHotelCity() {
+        return hotelCity;
+    }
+
+    public void setHotelCity(String hotelCity) {
+        this.hotelCity = hotelCity;
+    }
+
+    public boolean isAvailable() {
+        return isAvailable;
+    }
+
+    public void setAvailable(boolean available) {
+        isAvailable = available;
     }
 }

@@ -4,8 +4,10 @@ import edu.miu.cs.cs544.sahid.hotelbookingsystem.HelperModel.ReservationDTO;
 import edu.miu.cs.cs544.sahid.hotelbookingsystem.HelperModel.ReservationPaymentRequest;
 import edu.miu.cs.cs544.sahid.hotelbookingsystem.entity.Reservation;
 import edu.miu.cs.cs544.sahid.hotelbookingsystem.service.ReservationService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,9 +21,11 @@ public class ReservationController {
     @Autowired
     private ReservationService reservationService;
 
-    @PostMapping("/create")
+    @PostMapping(value = "/create",
+            consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE},
+            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
     public ResponseEntity<String> createReservationsWithPayment(
-            @RequestBody ReservationPaymentRequest request) {
+            @RequestBody @Valid ReservationPaymentRequest request) {
         String reservations = reservationService.createReservationsWithPayment(
                 request.getRoomIds(),
                 request.getReservation(),
@@ -37,7 +41,7 @@ public class ReservationController {
 //        return ResponseEntity.ok(reservationService.getAllReservations());
 //    }
 
-    @GetMapping
+    @GetMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
     public ResponseEntity<List<ReservationDTO>> getAllReservations(
             @RequestParam(value = "fromDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam(value = "toDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
