@@ -23,31 +23,5 @@ public class HotelBookingSystemApplication {
     public static void main(String[] args) {
         SpringApplication.run(HotelBookingSystemApplication.class, args);
     }
-//    @Bean
-//    public PasswordEncoder passwordEncoder() {
-//        return new BCryptPasswordEncoder();
-//    }
-//
-//    @Bean
-//    public AuthenticationManager authenticationManager(HttpSecurity http, PasswordEncoder passwordEncoder) throws Exception {
-//        AuthenticationManagerBuilder authManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
-//        authManagerBuilder
-//                .userDetailsService(customUserDetailsService)
-//                .passwordEncoder(passwordEncoder);
-//        return authManagerBuilder.build();
-//    }
 
-//    @Bean
-//    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//        http
-//                .csrf(csrf -> csrf.disable()) // Disable CSRF using the lambda syntax
-//                .authorizeHttpRequests(auth -> auth
-//                        .requestMatchers("/api/auth/signup", "/api/auth/signin").permitAll() // Allow public access to signup and signin endpoints
-//                        //.requestMatchers("/api/reservations/**").hasRole("USER") // Restrict access to "USER" role
-//                        //.requestMatchers("/api/admin/**").hasRole("ADMIN")
-//                        .anyRequest().authenticated() // Protect all other endpoints
-//                )
-//                .httpBasic(httpBasic -> {}); // Enable HTTP Basic authentication with default settings
-//        return http.build();
-//    }
 }

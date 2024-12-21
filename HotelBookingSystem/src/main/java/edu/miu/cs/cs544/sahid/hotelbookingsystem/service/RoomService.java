@@ -30,10 +30,6 @@ public class RoomService {
 
     }
 
-    // Retrieve all rooms
-//    public List<Room> getAllRooms() {
-//        return roomRepository.findAll();
-//    }
     public List<RoomDTO> getAllRooms() {
         return roomRepository.findAll().stream().filter(a -> a.getAvailable()).map(room -> {
             RoomDTO roomDTO = new RoomDTO();
